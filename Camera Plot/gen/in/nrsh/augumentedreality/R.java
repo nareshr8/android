@@ -62,6 +62,7 @@ public final class R {
         public static final int gathering_location_information_please_try_after_some_time_=0x7f05000a;
         public static final int go_to_settings=0x7f050009;
         public static final int hello_world=0x7f050002;
+        public static final int loading_=0x7f05000d;
         public static final int location_access_required=0x7f050007;
         public static final int location_access_required_=0x7f050006;
         public static final int please_check_your_internet_connection=0x7f05000c;

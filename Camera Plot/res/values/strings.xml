@@ -22,5 +22,6 @@
         <string name="gathering_location_information_please_try_after_some_time_">Gathering Location information. please try after some time.</string>
         <string name="gathering_location">Gathering Location</string>
         <string name="please_check_your_internet_connection">Please Check your internet connection</string>
+        <string name="loading_">Loading...</string>
 
 </resources>

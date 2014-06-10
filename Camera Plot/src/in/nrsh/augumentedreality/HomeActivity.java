@@ -39,6 +39,7 @@ public class HomeActivity extends Activity implements LocationListener,
 
 	GridView gridView;
 	private GridAdapter adapter;
+	private ProgressDialog mProgressDialog;
 
 	/**
 	 * The url to find the nearby places of any location/ Read the documentation
@@ -57,7 +58,7 @@ public class HomeActivity extends Activity implements LocationListener,
 	 * find the nearby places such as ATM
 	 */
 	private LocationManager mLocationMgr;
-	
+
 	private ProgressDialog mLocationProgress;
 
 	/**
@@ -81,10 +82,13 @@ public class HomeActivity extends Activity implements LocationListener,
 		setContentView(R.layout.activity_home);
 		gridView = (GridView) findViewById(R.id.gridView);
 		adapter = new GridAdapter(this, 0);
+		mProgressDialog = new ProgressDialog(this);
+		mProgressDialog.setTitle("Loading...");
+
 		gridView.setAdapter(adapter);
 		gridView.setEnabled(false);
 		gridView.setOnItemClickListener(this);
-		mLocationProgress=new ProgressDialog(this);
+		mLocationProgress = new ProgressDialog(this);
 		mLocationProgress.setTitle(getString(R.string.gathering_location));
 
 		/**
@@ -122,12 +126,12 @@ public class HomeActivity extends Activity implements LocationListener,
 
 		} else {
 			location = getLocation();
-			if(location!=null){
+			if (location != null) {
 				gridView.setEnabled(true);
-			} else{
+			} else {
 				mLocationProgress.show();
 			}
-				
+
 		}
 	}
 
@@ -211,146 +215,147 @@ public class HomeActivity extends Activity implements LocationListener,
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position,
 			long id) {
-			String place = null;
-			switch (position) {
-			case 0:
-				place = "airport";
-				break;
-			case 1:
-				place = "amusement_park";
-				break;
-			case 2:
-				place = "atm";
-				break;
-			case 3:
-				place = "bank";
-				break;
-			case 4:
-				place = "bus_station";
-				break;
-			case 5:
-				place = "hospital";
-				break;
+		String place = null;
+		switch (position) {
+		case 0:
+			place = "airport";
+			break;
+		case 1:
+			place = "amusement_park";
+			break;
+		case 2:
+			place = "atm";
+			break;
+		case 3:
+			place = "bank";
+			break;
+		case 4:
+			place = "bus_station";
+			break;
+		case 5:
+			place = "hospital";
+			break;
+		}
+		Log.d(TEXT_SERVICES_MANAGER_SERVICE,
+				"Lat Lng : " + location.getLatitude() + ","
+						+ location.getLongitude());
+
+		/**
+		 * Building the web-service URL to retrieve the nearby places
+		 */
+		StringBuilder queryHolder = new StringBuilder(NEARBY_LOCATION_URL);
+		queryHolder.append("location=" + location.getLatitude() + ","
+				+ location.getLongitude());
+		queryHolder.append("&radius=" + CameraActivity.DISTANCE_COVERED);
+		queryHolder.append("&types=" + place);
+		queryHolder.append("&sensor=true");
+		//TODO: Add your API Key here.
+		// Key is mentioned here. See the documentation to get an API Key.
+		queryHolder.append("&key=YourAPIKeyHere");
+
+		// Detecting the Magnetic declination of the current location for
+		// the
+		// current time
+		geoField = new GeomagneticField((float) location.getLatitude(),
+				(float) location.getLongitude(),
+				(float) location.getAltitude(), Calendar.getInstance()
+						.getTimeInMillis());
+
+		/**
+		 * Using the Volley error handler and showing a Toast message about the
+		 * error.
+		 */
+		ErrorListener errorListener = new ErrorListener() {
+
+			/**
+			 * Determines what to show when an inappropriate response is got.
+			 */
+			@Override
+			public void onErrorResponse(VolleyError error) {
+				error.printStackTrace();
+				mProgressDialog.dismiss();
+				Toast.makeText(HomeActivity.this,
+						R.string.please_check_your_internet_connection,
+						Toast.LENGTH_SHORT).show();
 			}
-			Log.d(TEXT_SERVICES_MANAGER_SERVICE,
-					"Lat Lng : " + location.getLatitude() + ","
-							+ location.getLongitude());
+		};
 
-			/**
-			 * Building the web-service URL to retrieve the nearby places
-			 */
-			StringBuilder queryHolder = new StringBuilder(NEARBY_LOCATION_URL);
-			queryHolder.append("location=" + location.getLatitude() + ","
-					+ location.getLongitude());
-			queryHolder.append("&radius=" + CameraActivity.DISTANCE_COVERED);
-			queryHolder.append("&types=" + place);
-			queryHolder.append("&sensor=true");
-			// Key is mentioned here. See the documentation to get an API Key.
-			queryHolder.append("&key=YourAPIKeyHere");
+		// Listener that gets called on succesful response and parsing of
+		// JSON
+		// data. The parsing is done using the GSON library.
+		Listener<Response> listener = new Listener<Response>() {
 
-			// Detecting the Magnetic declination of the current location for
-			// the
-			// current time
-			geoField = new GeomagneticField((float) location.getLatitude(),
-					(float) location.getLongitude(),
-					(float) location.getAltitude(), Calendar.getInstance()
-							.getTimeInMillis());
+			@Override
+			public void onResponse(Response response) {
+				mProgressDialog.dismiss();
+				// Determining the Location's current angle from the current
+				// location with respect to north pole and the distance
+				// between
+				// the current location and the places got in the response.
+				for (int i = 0; i < response.getResults().length; i++) {
+					Results result = response.getResults()[i];
+					double currentLat = result.getGeometry().getLocation()
+							.getLat();
+					double currentLng = result.getGeometry().getLocation()
+							.getLng();
+					double adj = currentLat - location.getLatitude();
+					double opp = currentLng - location.getLongitude();
 
-			/**
-			 * Using the Volley error handler and showing a Toast message about
-			 * the error.
-			 */
-			ErrorListener errorListener = new ErrorListener() {
+					// Applying Pythegorous theorem to get the distance
+					// between the two points.
+					Double distanceDouble = Math.sqrt(Math.pow(
+							Math.abs(opp) * 1000, 2)
+							+ Math.pow(Math.abs(adj) * 1000, 2));
 
-				/**
-				 * Determines what to show when an inappropriate response is
-				 * got.
-				 */
-				@Override
-				public void onErrorResponse(VolleyError error) {
-					error.printStackTrace();
-					Toast.makeText(HomeActivity.this,
-							R.string.please_check_your_internet_connection, Toast.LENGTH_SHORT)
-							.show();
-				}
-			};
+					// Multiply by 111 to get the distance in meters
+					distanceDouble *= 111;
+					int distance = distanceDouble.intValue();
 
-			// Listener that gets called on succesful response and parsing of
-			// JSON
-			// data. The parsing is done using the GSON library.
-			Listener<Response> listener = new Listener<Response>() {
-
-				@Override
-				public void onResponse(Response response) {
-
-					// Determining the Location's current angle from the current
-					// location with respect to north pole and the distance
-					// between
-					// the current location and the places got in the response.
-					for (int i = 0; i < response.getResults().length; i++) {
-						Results result = response.getResults()[i];
-						double currentLat = result.getGeometry().getLocation()
-								.getLat();
-						double currentLng = result.getGeometry().getLocation()
-								.getLng();
-						double adj = currentLat - location.getLatitude();
-						double opp = currentLng - location.getLongitude();
-
-						// Applying Pythegorous theorem to get the distance
-						// between the two points.
-						Double distanceDouble = Math.sqrt(Math.pow(
-								Math.abs(opp) * 1000, 2)
-								+ Math.pow(Math.abs(adj) * 1000, 2));
-
-						// Multiply by 111 to get the distance in meters
-						distanceDouble *= 111;
-						int distance = distanceDouble.intValue();
-
-						// Calculation to determine the angle. See the PPT/
-						// Documentation for details about this calculation.
-						double angle = Math.toDegrees(Math.atan((Math.abs(opp))
-								/ Math.abs(adj)));
-						angle -= geoField.getDeclination();
-						if (opp < 0 && adj < 0) {
-							// South West alone
-							angle = 180 + angle;
-						} else if (adj < 0) {
-							// South alone
-							angle = 180 - angle;
-						} else if (opp < 0) {
-							// West alone
-							angle = 360 - angle;
-						}
-
-						// Regulation to put angle in [0,360]
-						if (angle < 0) {
-							angle += 360;
-						}
-						Log.d(TAG, "The" + result.getName() + " is in your "
-								+ ((opp > 0) ? "E" : "W")
-								+ ((adj > 0) ? "N" : "S") + " angle : " + angle);
-						result.getGeometry().getLocation().setAngle(angle);
-						result.getGeometry().getLocation()
-								.setDistance(distance);
+					// Calculation to determine the angle. See the PPT/
+					// Documentation for details about this calculation.
+					double angle = Math.toDegrees(Math.atan((Math.abs(opp))
+							/ Math.abs(adj)));
+					angle -= geoField.getDeclination();
+					if (opp < 0 && adj < 0) {
+						// South West alone
+						angle = 180 + angle;
+					} else if (adj < 0) {
+						// South alone
+						angle = 180 - angle;
+					} else if (opp < 0) {
+						// West alone
+						angle = 360 - angle;
 					}
 
-					// After all these calculations are done, Open up the Camera
-					// and
-					// place the image over it.
-					Intent intent = new Intent(HomeActivity.this,
-							CameraActivity.class);
-					intent.putExtra(CameraActivity.EXTRA_RESPONSE, response);
-					startActivity(intent);
+					// Regulation to put angle in [0,360]
+					if (angle < 0) {
+						angle += 360;
+					}
+					Log.d(TAG, "The" + result.getName() + " is in your "
+							+ ((opp > 0) ? "E" : "W") + ((adj > 0) ? "N" : "S")
+							+ " angle : " + angle);
+					result.getGeometry().getLocation().setAngle(angle);
+					result.getGeometry().getLocation().setDistance(distance);
 				}
-			};
 
-			// The web-service request is being set using the volley library,
-			GsonRequest<Response> request = new GsonRequest<Response>(
-					queryHolder.toString(), Response.class, null, listener,
-					errorListener);
+				// After all these calculations are done, Open up the Camera
+				// and
+				// place the image over it.
+				Intent intent = new Intent(HomeActivity.this,
+						CameraActivity.class);
+				intent.putExtra(CameraActivity.EXTRA_RESPONSE, response);
+				startActivity(intent);
+			}
+		};
 
-			// Adding the request to the Volley queue to process this request.
-			app.addToRequestQueue(request);
+		// The web-service request is being set using the volley library,
+		GsonRequest<Response> request = new GsonRequest<Response>(
+				queryHolder.toString(), Response.class, null, listener,
+				errorListener);
+
+		// Adding the request to the Volley queue to process this request.
+		app.addToRequestQueue(request);
+		mProgressDialog.show();
 	}
 
 	public static boolean isLocationEnabled(Context context) {
