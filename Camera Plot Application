@@ -5,6 +5,8 @@ The user can choose one amoung these places and see the direction in which they 
 As you turn the phone to a different direction, you may see that a pin marking your favorite location is shown representing the direction.
 As you move towards that direction, you get to that loaction.
 
+The documentation of the logic on how this application is thought out and implemented is available in this same directory
+
 The working APK of this application is available in Play Store in the below mentioned link: https://play.google.com/store/apps/details?id=in.nrsh.augumentedreality&hl=en
 
 
