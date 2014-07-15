@@ -1,0 +1,13 @@
+This Application is a try for Augumented reality in android. 
+You can choose what they want are searching for, in the Augumented camera screen. 
+These include Airports, Amusement Parks, ATMs, Banks, Bustops and Hospitals.
+The user can choose one amoung these places and see the direction in which they should travel to get to that exact place.
+As you turn the phone to a different direction, you may see that a pin marking your favorite location is shown representing the direction.
+As you move towards that direction, you get to that loaction.
+
+The working APK of this application is available in Play Store in the below mentioned link: https://play.google.com/store/apps/details?id=in.nrsh.augumentedreality&hl=en
+
+
+Disclaimer:
+The Location details regarding the Public places mentioned above are got from Google APIs.
+Atpresent, only places that are as close as 1 KM to you are visible.
